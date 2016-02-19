@@ -1,1 +1,1 @@
-
+ConnectOutput("OnUse", "ChestUse");
