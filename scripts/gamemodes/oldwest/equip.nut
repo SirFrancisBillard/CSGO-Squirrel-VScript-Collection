@@ -1,0 +1,1 @@
+DoIncludeScript("default.nut", this);
