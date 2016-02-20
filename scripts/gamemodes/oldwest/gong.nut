@@ -1,4 +1,8 @@
 DoIncludeScript("default.nut", this);
 DoIncludeScript("kill_logger.nut", this);
 
-this.LoggedKills <- GetLOggedKills();
+this.e_SoundPlayer <- EntityGroup[0];
+
+function PlayGongSound() {
+	EntFire(e_SoundPlayer.GetName(), "PlaySound", 1);
+}
