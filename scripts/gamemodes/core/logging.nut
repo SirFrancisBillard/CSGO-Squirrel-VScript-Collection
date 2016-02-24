@@ -1,8 +1,8 @@
 Log <- {
-	Event = function(contents) {
+	Event <- function(contents) {
 		
 	}
-	Access = function() {
+	Access <- function() {
 		
 	}
 }
