@@ -1,5 +1,7 @@
-SendToConsoleServer("ent_remove GORP_Script");
-SendToConsoleServer("ent_remove GORP_Timer");
+SendToConsole("sv_cheats 1");
+SendToConsole("ent_remove GORP_Script");
+SendToConsole("ent_remove GORP_Timer");
+SendToConsole("sv_cheats 0");
 
 GORP_Script <- Entities.CreateByClassname("logic_script");
 GORP_Script.__KeyValueFromString("targetname", "GORP_Script");

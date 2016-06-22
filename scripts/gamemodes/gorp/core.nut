@@ -12,6 +12,7 @@ SendToConsoleServer("mp_teammates_are_enemies 1");
 SendToConsoleServer("mp_buy_anywhere 1");
 SendToConsoleServer("mp_limitteams 0");
 SendToConsoleServer("mp_autoteambalance 0");
+SendToConsoleServer("mp_startmoney 200");
 SendToConsoleServer("mp_maxmoney 1000000");
 SendToConsoleServer("mp_buytime 9999999999");
 SendToConsoleServer("mp_teamname_1 \"Police\"");
@@ -28,14 +29,36 @@ SendToConsoleServer("mp_restartgame 1");
 HEALTH_STATION_RADIUS <- 128;
 HEALTH_STATION_HEALTH <- 1;
 
+SALARY_DELAY <- 120;
+SALARY_AMOUNT <- 200;
+SALARY_MESSAGE <- "Payday!";
+SALARY_GIVER <- Entities.CreateByClassname("game_money");
+SALARY_GIVER.__KeyValueFromString("AwardText", SALARY_MESSAGE);
+SALARY_GIVER.__KeyValueFromInt("Money", SALARY_AMOUNT);
+SALARY_TIMER <- Time() + SALARY_DELAY;
+
+function GiveSalaries()
+{
+	SendToConsole("echo I SAID IT'S FUCKIN' PAYDAY MOTHERFUCKERS");
+	
+	EntFireByHandle(SALARY_GIVER, "AddTeamMoneyCT", SALARY_AMOUNT.tostring(), 0.0, SALARY_GIVER, SALARY_GIVER);
+	EntFireByHandle(SALARY_GIVER, "AddTeamMoneyTerrorist", SALARY_AMOUNT.tostring(), 0.0, SALARY_GIVER, SALARY_GIVER);
+}
+
 function Think()
 {
-	SendToConsole("echo Think function has been run");
+	SendToConsole("echo Think function has started...");
+	
+	if (SALARY_TIMER < Time())
+	{
+		SALARY_TIMER <- Time() + SALARY_DELAY;
+		GiveSalaries();
+	}
 	
 	decoy <- null;
 	while ((decoy = Entities.FindByClassname(decoy, "decoy_projectile")) != null)
 	{
-		if(decoy.GetVelocity().Length() == Vector(0,0,0).Length())
+		if (decoy.GetVelocity().Length() == Vector(0,0,0).Length())
 		{
 			owner <- decoy.GetOwner();
 			origin <- decoy.GetOrigin();
@@ -60,4 +83,6 @@ function Think()
 			}
 		}
 	}
+	
+	SendToConsole("echo Think function successful!");
 }
