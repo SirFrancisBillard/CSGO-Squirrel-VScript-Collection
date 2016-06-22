@@ -1,5 +1,3 @@
-::FUCK <- "KILL YOURSELF";
-
 SendToConsoleServer("ent_remove GORP_Script");
 SendToConsoleServer("ent_remove GORP_Timer");
 
@@ -24,7 +22,8 @@ SendToConsole("echo Refire time set");
 GORP_Timer.__KeyValueFromString("targetname", "GORP_Timer");
 GORP_Timer.ValidateScriptScope();
 SendToConsole("echo Timer scope validated");
-SendToConsoleServer("ent_fire GORP_Timer enable");
-SendToConsoleServer("ent_fire GORP_Timer addoutput startdisabled 0");
-SendToConsoleServer("ent_fire GORP_Timer addoutput OnTimer GORP_Script,RunScriptCode,Think()");
-SendToConsoleServer("ent_fire GORP_Timer enable");
+SendToConsole("sv_cheats 1");
+SendToConsole("ent_fire GORP_Timer enable");
+SendToConsole("ent_fire GORP_Timer addoutput \"startdisabled 0\"");
+SendToConsole("ent_fire GORP_Timer addoutput \"OnTimer GORP_Script,RunScriptCode,Think(),0.0,-1\"");
+SendToConsole("sv_cheats 0");
