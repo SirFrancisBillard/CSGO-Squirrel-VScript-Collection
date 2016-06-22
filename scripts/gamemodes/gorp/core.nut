@@ -61,7 +61,7 @@ function AdvertGORP()
 
 function GORP_CreateJob(nm, mdl, tm, hp)
 {
-	PrecacheModel(mdl);
+	Entities.FindByClassname(null, "player").PrecacheModel(mdl);
 	JobTable <- {name = nm, model = mdl, team = tm, health = hp};
 	return JobTable;
 }
@@ -76,7 +76,7 @@ function GORP_CreateJob(nm, mdl, tm, hp)
 function SetJob(ply, jobtbl)
 {
 	PrecacheModel(jobtbl.model);
-	if (ply.IsValid() and ply.GetClassname == "player")
+	if (ply.IsValid() && ply.GetClassname() == "player")
 	{
 		ply.__KeyValueFromString("targetname", jobtbl.name);
 		ply.SetModel(jobtbl.model);
@@ -85,6 +85,14 @@ function SetJob(ply, jobtbl)
 		ply.SetHealth(jobtbl.health);
 	}
 }
+
+
+function Precache()
+{
+	Entities.FindByClassname(null, "player").PrecacheModel("models/props/cs_office/microwave.mdl");
+}
+
+Precache();
 
 function Think()
 {
@@ -109,7 +117,14 @@ function Think()
 			owner <- decoy.GetOwner();
 			origin <- decoy.GetOrigin();
 
-			owner.SetOrigin(origin);
+			if (owner.GetName() == "Medic")
+			{
+				hs <- Entities.CreateByClassname("prop_physics");
+				hs.SetModel("models/props/cs_office/microwave.mdl");
+				hs.__KeyValueFromString("targetname", "gorp_health_station");
+				hs.SetOrigin(origin);
+			}
+			
 			decoy.Destroy();
 		}
 	}
