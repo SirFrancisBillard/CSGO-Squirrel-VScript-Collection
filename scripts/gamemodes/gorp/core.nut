@@ -14,6 +14,8 @@ SendToConsoleServer("mp_roundtime_hostage 9999999999");
 SendToConsoleServer("mp_ignore_round_win_conditions 1");
 SendToConsoleServer("mp_teammates_are_enemies 1");
 SendToConsoleServer("mp_buy_anywhere 1");
+SendToConsoleServer("mp_respawn_on_death_ct 1");
+SendToConsoleServer("mp_respawn_on_death_t 1");
 SendToConsoleServer("mp_limitteams 0");
 SendToConsoleServer("mp_autoteambalance 0");
 SendToConsoleServer("mp_give_player_c4 0");
@@ -57,6 +59,7 @@ function AdvertGORP()
 {
 	ScriptPrintMessageChatAll(GORP_SHORTNAME + " " + GORP_VERSION);
 	ScriptPrintMessageChatAll("Created by " + GORP_AUTHOR);
+	GORP_ADVERT_TIMER <- Time() + GORP_ADVERT_DELAY;
 }
 
 function GORP_CreateJob(nm, mdl, tm, hp)
