@@ -192,9 +192,42 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 							} else {
 								if (target.ValidateScriptScope()) {
 									local ts = target.GetScriptScope()
-									::CenterPrint(ply, "You have given " + ts.rpname + " a gun license.")
-									::CenterPrint(target, script.rpname + " has given you a gun license.")
-									ts.license <- true
+									if (ts.license) {
+										::CenterPrint(ply, ts.rpname + " already has a gun license!")
+									} else {
+										::CenterPrint(ply, "You have given " + ts.rpname + " a gun license.")
+										::CenterPrint(target, script.rpname + " has given you a gun license.")
+										ts.license <- true
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (txt.len() >= 14 && txt.slice(0, 14) == "/revokelicense") {
+				if (script.job != "Police Officer") {
+					::CenterPrint(ply, "You are not allowed to take away people's gun licenses!")
+				} else {
+					if (txt.len() >= 16 && txt.slice(16).len() > 2) {
+						::CenterPrint(ply, "Invalid target!")
+					} else {
+						local target = FindPlayerByRPName(txt.slice(16))
+						if (target == null) {
+							::CenterPrint(ply, "Invalid target!")
+						} else {
+							if (ply.entindex() == target.entindex()) {
+								::CenterPrint(ply, "You cannot take away your own license!")
+							} else {
+								if (target.ValidateScriptScope()) {
+									local ts = target.GetScriptScope()
+									if (ts.license) {
+										::CenterPrint(ply, "You have revoked " + ts.rpname + "'s gun license.")
+										::CenterPrint(target, script.rpname + " has revoked your gun license.")
+										ts.license <- false
+									} else {
+										::CenterPrint(ply, ts.rpname + " does not have a gun license!")
+									}
 								}
 							}
 						}
