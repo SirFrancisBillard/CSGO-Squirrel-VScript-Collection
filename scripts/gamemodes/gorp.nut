@@ -187,7 +187,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 							::CenterPrint(ply, "Invalid target!")
 						} else {
 							if (ply.entindex() == target.entindex()) {
-								:CenterPrint(ply, "You cannot give yourself a gun license!")
+								::CenterPrint(ply, "You cannot give yourself a gun license!")
 							} else {
 								if (target.ValidateScriptScope()) {
 									local ts = target.GetScriptScope()
