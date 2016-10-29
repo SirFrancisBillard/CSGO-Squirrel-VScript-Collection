@@ -131,7 +131,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 			if (txt == "/requestlicense") {
 				ScriptPrintMessageChatAll(script.rpname + " is requesting a gun license.")
 			}
-			if (txt == "/money" || txt == "/wallet" || txt == "cash") {
+			if (txt == "/money" || txt == "/wallet" || txt == "/cash") {
 				::CenterPrint(ply, "You have $" + script.money + ".")
 			}
 			if (txt == "/snacks") {
@@ -175,11 +175,11 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 					script.money = script.money - 40
 				}
 			}
-			if (txt.slice(0, 12) == "/givelicense") {
+			if (txt.len() >= 12 && txt.slice(0, 12) == "/givelicense") {
 				if (script.job != "Police Officer") {
 					::CenterPrint(ply, "You are not allowed to give people gun licenses!")
 				} else {
-					if (txt.slice(14).len() > 2) {
+					if (txt.len() >= 14 && txt.slice(14).len() > 2) {
 						::CenterPrint(ply, "Invalid target!")
 					} else {
 						local target = FindPlayerByRPName(txt.slice(14))
@@ -200,8 +200,8 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 					}
 				}
 			}
-			if (txt.slice(0, 11) == "/haslicense") {
-				if (txt.slice(13).len() > 2) {
+			if (txt.len() >= 11 && txt.slice(0, 11) == "/haslicense") {
+				if (txt.len() >= 13 && txt.slice(13).len() > 2) {
 					::CenterPrint(ply, "Invalid target!")
 				} else {
 					local target = FindPlayerByRPName(txt.slice(13))
