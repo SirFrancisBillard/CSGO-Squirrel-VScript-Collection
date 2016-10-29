@@ -173,6 +173,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				} else {
 					::CenterPrint(ply, "You have bought ammo for $40.")
 					script.money = script.money - 40
+					VUtil.Player.GiveAmmo(ply)
 				}
 			}
 			if (txt.len() >= 12 && txt.slice(0, 12) == "/givelicense") {
