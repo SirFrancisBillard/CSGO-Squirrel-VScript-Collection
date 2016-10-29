@@ -87,12 +87,12 @@ GORP.Cops <- []
 ::OnGameEvent_player_say <- function(ply, txt) {
 	if (ply.ValidateScriptScope()) {
 		local script = ply.GetScriptScope()
-		if (txt.slice(0, 4) != "/name" && script.rpname == "noname") {
-			CenterPrint(ply, "You must /name before doing that!")
+		if (txt.slice(0, 5) != "/name" && script.rpname == "noname") {
+			::CenterPrint(ply, "You must /name before doing that!")
 		} else {
-			if (txt.slice(0, 4) == "/name") {
+			if (txt.slice(0, 5) == "/name") {
 				if (txt.slice(6).len() < 2 || txt.slice(6) == "noname") {
-					CenterPrint(ply, "Invalid name!")
+					::CenterPrint(ply, "Invalid name!")
 				} else {
 					local oldname = script.rpname
 					local newname = txt.slice(6)
@@ -126,18 +126,19 @@ GORP.Cops <- []
 ::OnGameEvent_player_use <- function(ply, ent) {
 }
 
-::OnGameEvent_player_connect <- function(ply, ent) {
+::OnGameEvent_player_footstep <- function(ply) {
 	if (ply.ValidateScriptScope()) {
 		local script = ply.GetScriptScope()
-		script.rpname <- "noname"
-		script.job <- "Citizen"
-		script.license <- false
-		script.wanted <- false
+		if (!("gorp_init" in script)) {
+			script.rpname <- "noname"
+			script.job <- "Citizen"
+			script.snacks <- 0
+			script.stocks <- 0
+			script.license <- false
+			script.wanted <- false
+			script.gorp_init <- true
+		}
 	}
-}
-
-::OnGameEvent_player_disconnect <- function(ply, ent) {
-	ScriptPrintMessageChatAll("NICE USE KID")
 }
 
 EVENT_PLAYER_DEATH<-0;
