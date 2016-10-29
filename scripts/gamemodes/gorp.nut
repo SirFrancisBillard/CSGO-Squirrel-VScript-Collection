@@ -70,10 +70,17 @@ env_hudhint.__KeyValueFromString("message",text)
 EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 }
 
-::GORP <- {}
-
-GORP.GunDealers <- []
-GORP.Cops <- []
+::FindPlayerByRPName <- function(name) {
+	foreach (ply in VUtil.Player.GetAll()) {
+		if (ply.ValidateScriptScope()) {
+			local script = ply.GetScriptScope()
+			if (script.rpname.find(name) != null || name.find(script.rpname) != null) {
+				return ply
+			}
+		}
+	}
+	return null
+}
 
 ::OnGameEvent_bullet_impact <- function(ply, pos) {
 	local plypos=ply.GetOrigin()
@@ -83,6 +90,8 @@ GORP.Cops <- []
 ::OnGameEvent_inspect_weapon <- function(ply) {
 	VUtil.Debug.PrintTable(ply.GetScriptScope())
 }
+
+
 
 ::OnGameEvent_player_say <- function(ply, txt) {
 	if (ply.ValidateScriptScope()) {
@@ -155,6 +164,58 @@ GORP.Cops <- []
 						::CenterPrint(ply, "You have bought snacks for $5.")
 						script.money = script.money - 5
 						script.snacks = script.snacks + 1
+					}
+				}
+			}
+			if (txt == "/buyammo") {
+				if (script.money < 40) {
+					::CenterPrint(ply, "You do not have enough money!")
+				} else {
+					::CenterPrint(ply, "You have bought ammo for $40.")
+					script.money = script.money - 40
+				}
+			}
+			if (txt.slice(0, 12) == "/givelicense") {
+				if (script.job != "Police Officer") {
+					::CenterPrint(ply, "You are not allowed to give people gun licenses!")
+				} else {
+					if (txt.slice(14).len() > 2) {
+						::CenterPrint(ply, "Invalid target!")
+					} else {
+						local target = FindPlayerByRPName(txt.slice(14))
+						if (target == null) {
+							::CenterPrint(ply, "Invalid target!")
+						} else {
+							if (ply.entindex() == target.entindex()) {
+								:CenterPrint(ply, "You cannot give yourself a gun license!")
+							} else {
+								if (target.ValidateScriptScope()) {
+									local ts = target.GetScriptScope()
+									::CenterPrint(ply, "You have given " + ts.rpname + " a gun license.")
+									::CenterPrint(target, script.rpname + " has given you a gun license.")
+									ts.license <- true
+								}
+							}
+						}
+					}
+				}
+			}
+			if (txt.slice(0, 11) == "/haslicense") {
+				if (txt.slice(13).len() > 2) {
+					::CenterPrint(ply, "Invalid target!")
+				} else {
+					local target = FindPlayerByRPName(txt.slice(13))
+					if (target == null) {
+						::CenterPrint(ply, "Invalid target!")
+					} else {
+						if (target.ValidateScriptScope()) {
+							local ts = target.GetScriptScope()
+							if (ts.license) {
+								::CenterPrint(ply, ts.rpname + " can legally bare arms.")
+							} else {
+								::CenterPrint(ply, ts.rpname + " cannot legally bare arms.")
+							}	
+						}
 					}
 				}
 			}
