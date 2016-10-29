@@ -119,6 +119,45 @@ GORP.Cops <- []
 				script.job <- job
 				ScriptPrintMessageChatAll(script.rpname + " has become a " + job + ".")
 			}
+			if (txt == "/requestlicense") {
+				ScriptPrintMessageChatAll(script.rpname + " is requesting a gun license.")
+			}
+			if (txt == "/money" || txt == "/wallet" || txt == "cash") {
+				::CenterPrint(ply, "You have $" + script.money + ".")
+			}
+			if (txt == "/snacks") {
+				::CenterPrint(ply, "You have " + script.snacks + " snacks.")
+			}
+			if (txt == "/eat" || txt == "/heal") {
+				if (ply.GetHealth() >= 100) {
+					::CenterPrint(ply, "You do not need any snacks!")
+				} else {
+					if (script.snacks < 1) {
+						::CenterPrint(ply, "You do not have any snacks!")
+					} else {
+						::CenterPrint(ply, "You have eaten snacks.")
+						local hp = ply.GetHealth() + 10
+						if (hp > 100) {
+							hp = 100
+						}
+						ply.SetHealth(hp)
+						script.snacks = script.snacks - 1
+					}
+				}
+			}
+			if (txt == "/buysnacks") {
+				if (script.snacks >= 12) {
+					::CenterPrint(ply, "You are already carrying 12 snacks!")
+				} else {
+					if (script.money < 5) {
+						::CenterPrint(ply, "You do not have enough money!")
+					} else {
+						::CenterPrint(ply, "You have bought snacks for $5.")
+						script.money = script.money - 5
+						script.snacks = script.snacks + 1
+					}
+				}
+			}
 		}
 	}
 }
@@ -132,6 +171,7 @@ GORP.Cops <- []
 		if (!("gorp_init" in script)) {
 			script.rpname <- "noname"
 			script.job <- "Citizen"
+			script.money <- 250
 			script.snacks <- 0
 			script.stocks <- 0
 			script.license <- false
