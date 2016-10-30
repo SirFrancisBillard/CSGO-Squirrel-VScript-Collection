@@ -251,6 +251,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt == "/gundealer" && script.job != "Gun Dealer") {
+				ply.SetTeam(2)
 				local job = "Gun Dealer"
 				script.job <- job
 				script.salary <- 15
@@ -258,6 +259,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt == "/police" && script.job != "Police Officer") {
+				ply.SetTeam(3)
 				local job = "Police Officer"
 				script.job <- job
 				script.salary <- 25
@@ -265,6 +267,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt == "/citizen" && script.job != "Citizen") {
+				ply.SetTeam(2)
 				local job = "Citizen"
 				script.job <- job
 				script.salary <- 20
@@ -272,6 +275,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt == "/hobo" && script.job != "Hobo") {
+				ply.SetTeam(2)
 				local job = "Hobo"
 				script.job <- job
 				script.salary <- 0
@@ -279,6 +283,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt == "/mayor" && script.job != "Mayor" && !::ActiveMayor()) {
+				ply.SetTeam(3)
 				local job = "Mayor"
 				script.job <- job
 				script.salary <- 45
@@ -301,15 +306,50 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				if (script.job != "Mayor") {
 					::CenterPrint(ply, "You are not allowed to initiate a lockdown!")
 				} else {
-					if (script.snacks < 1) {
-						::CenterPrint(ply, "You do not have any snacks!")
+					if (::LockdownEndTime <= Time()) {
+						if (::LockdownInEffect) {
+							::CenterPrint(ply, "You have ended the lockdown.")
+							ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+							ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+							ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+							::LockdownInEffect <- false
+						} else {
+							::CenterPrint(ply, "You have initiated a lockdown.")
+							ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED A LOCKDOWN")
+							ScriptPrintMessageChatAll("ONLY GOVERNMENT OFFICIALS WILL BE ALLOWED ON THE STREET")
+							ScriptPrintMessageChatAll("EVERYONE MUST STAY INSIDE THEIR HOMES")
+							ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED A LOCKDOWN")
+							::LockdownInEffect <- true
+							::LockdownEndTime <- Time() + 60
+						}
 					} else {
-						::CenterPrint(ply, "You have initiated a lockdown.")
-						ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED A LOCKDOWN")
-						ScriptPrintMessageChatAll("ONLY GOVERNMENT OFFICIALS WILL BE ALLOWED ON THE STREET")
-						ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED A LOCKDOWN")
-						::LockdownInEffect <- true
-						::LockdownEndTime <- Time() + 60
+						::CenterPrint(ply, "You must wait " + (::LockdownEndTime - Time()) + " seconds before initiating another lockdown.")
+					}
+				}
+				return
+			}
+			if (txt == "/purge") {
+				if (script.job != "Mayor") {
+					::CenterPrint(ply, "You are not allowed to initiate the purge!")
+				} else {
+					if (::LockdownEndTime <= Time()) {
+						if (::PurgeInEffect) {
+							::CenterPrint(ply, "You have ended the purge.")
+							ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+							ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+							ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+							::PurgeInEffect <- false
+						} else {
+							::CenterPrint(ply, "You have initiated the purge.")
+							ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED THE PURGE")
+							ScriptPrintMessageChatAll("ALL CRIME WILL BE LEGAL FOR FIVE MINUTES")
+							ScriptPrintMessageChatAll("ALL GOVERNMENT OFFICIALS HAVE IMMUNITY")
+							ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED THE PURGE")
+							::PurgeInEffect <- true
+							::PurgeEndTime <- Time() + 360
+						}
+					} else {
+						::CenterPrint(ply, "You must wait " + (::PurgeEndTime - Time()) + " seconds before initiating another lockdown.")
 					}
 				}
 				return
