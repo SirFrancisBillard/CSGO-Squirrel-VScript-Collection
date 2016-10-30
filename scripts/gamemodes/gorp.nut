@@ -22,11 +22,11 @@
 
 //Translated from valve key value with gmod lua function util.KeyValuesToTable
 
-SendToConsoleServer("mp_respawn_on_death_t 1")
-SendToConsoleServer("mp_respawn_on_death_ct 1")
-SendToConsoleServer("mp_ignore_round_win_conditions 1")
-SendToConsoleServer("mp_teammates_are_enemies 1")
-SendToConsoleServer("mp_warmup_end 1")
+SendToConsole("mp_respawn_on_death_t 1")
+SendToConsole("mp_respawn_on_death_ct 1")
+SendToConsole("mp_ignore_round_win_conditions 1")
+SendToConsole("mp_teammates_are_enemies 1")
+SendToConsole("mp_warmup_end")
 
 IncludeScript("VUtil.nut");
 
@@ -182,6 +182,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 			script.rpname <- "noname"
 			script.job <- "Citizen"
 			script.money <- 250
+			script.salary <- 20
 			script.snacks <- 0
 			script.stocks <- 0
 			script.bounty <- 0
@@ -195,9 +196,9 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 
 ::BuyableWeapons <- []
 
-::BuyableWeapons.push({classname <- "weapon_ak47", price <- 180})
-::BuyableWeapons.push({classname <- "weapon_awp", price <- 360})
-::BuyableWeapons.push({classname <- "weapon_deagle", price <- 80})
+::BuyableWeapons.push({classname = "weapon_ak47", price = 180})
+::BuyableWeapons.push({classname = "weapon_awp", price = 360})
+::BuyableWeapons.push({classname = "weapon_deagle", price = 80})
 
 ::OnGameEvent_player_say <- function(ply, txt) {
 	if (ply.ValidateScriptScope()) {
@@ -396,7 +397,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				local args = split(txt, " ")
 				if (script.job != "Gun Dealer" && script.job != "Police Officer" && script.job != "Mayor") {
 					::CenterPrint(ply, "You are not allowed to buy a weapon!")
-				} else
+				} else {
 					if (args[1] == null) {
 						::CenterPrint(ply, "Invalid weapon!")
 					} else {
@@ -429,7 +430,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt.len() >= 12 && txt.slice(0, 12) == "/givelicense") {
-				if (script.job != "Police Officer") {
+				if (script.job != "Police Officer" && script.job != "Mayor") {
 					::CenterPrint(ply, "You are not allowed to give people gun licenses!")
 				} else {
 					if (txt.len() >= 14 && txt.slice(14).len() < 2) {
@@ -459,7 +460,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt.len() >= 14 && txt.slice(0, 14) == "/revokelicense") {
-				if (script.job != "Police Officer") {
+				if (script.job != "Police Officer" && script.job != "Mayor") {
 					::CenterPrint(ply, "You are not allowed to take away people's gun licenses!")
 				} else {
 					if (txt.len() >= 16 && txt.slice(16).len() < 2) {
@@ -509,7 +510,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt.len() >= 8 && txt.slice(0, 8) == "/warrant") {
-				if (script.job != "Police Officer") {
+				if (script.job != "Police Officer" && script.job != "Mayor") {
 					::CenterPrint(ply, "You are not allowed to place a search warrant!")
 				} else {
 					if (txt.len() >= 10 && txt.slice(10).len() < 2) {
@@ -539,7 +540,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				return
 			}
 			if (txt.len() >= 10 && txt.slice(0, 10) == "/unwarrant") {
-				if (script.job != "Police Officer") {
+				if (script.job != "Police Officer" && script.job != "Mayor") {
 					::CenterPrint(ply, "You are not allowed to revoke a search warrant!")
 				} else {
 					if (txt.len() >= 12 && txt.slice(12).len() < 2) {
