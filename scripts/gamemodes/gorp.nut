@@ -193,6 +193,12 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 	}
 }
 
+::BuyableWeapons <- []
+
+::BuyableWeapons.push({classname <- "weapon_ak47", price <- 180})
+::BuyableWeapons.push({classname <- "weapon_awp", price <- 360})
+::BuyableWeapons.push({classname <- "weapon_deagle", price <- 80})
+
 ::OnGameEvent_player_say <- function(ply, txt) {
 	if (ply.ValidateScriptScope()) {
 		local script = ply.GetScriptScope()
@@ -382,6 +388,32 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 						::CenterPrint(ply, "You have bought snacks for $5.")
 						script.money = script.money - 5
 						script.snacks = script.snacks + 1
+					}
+				}
+				return
+			}
+			if (txt.len() >= 4 && txt.slice(0, 4) == "/buy") {
+				local args = split(txt, " ")
+				if (script.job != "Gun Dealer" && script.job != "Police Officer" && script.job != "Mayor") {
+					::CenterPrint(ply, "You are not allowed to buy a weapon!")
+				} else
+					if (args[1] == null) {
+						::CenterPrint(ply, "Invalid weapon!")
+					} else {
+						if (args[1].len() < 2) {
+							::CenterPrint(ply, "Invalid weapon!")
+						} else {
+							foreach (wep in ::BuyableWeapons) {
+								if (wep.classname.slice(8).find(args[1]) || args[1].find(wep.classname.slice(8))) {
+									if (script.money < wep.price) {
+										::CenterPrint(ply, "You do not have enough money!")
+									} else {
+										VUtil.Player.GiveWeapon(ply, wep.classname)
+										script.money <- script.money - wep.price
+									}
+								}
+							}
+						}
 					}
 				}
 				return
