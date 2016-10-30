@@ -22,6 +22,12 @@
 
 //Translated from valve key value with gmod lua function util.KeyValuesToTable
 
+SendToConsoleServer("mp_respawn_on_death_t 1")
+SendToConsoleServer("mp_respawn_on_death_ct 1")
+SendToConsoleServer("mp_ignore_round_win_conditions 1")
+SendToConsoleServer("mp_teammates_are_enemies 1")
+SendToConsoleServer("mp_warmup_end 1")
+
 IncludeScript("VUtil.nut");
 
 ::env_hudhint<-Entities.CreateByClassname("env_hudhint")
@@ -70,6 +76,56 @@ env_hudhint.__KeyValueFromString("message",text)
 EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 }
 
+::LockdownInEffect <- false
+::PurgeInEffect <- false
+::LotteryInEffect <- false
+
+::LockdownEndTime <- Time()
+::PurgeEndTime <- Time()
+::LotteryEndTime <- Time()
+
+::SalaryTimer <- Time() + 360
+
+::GORP_Think <- function() {
+	if (::SalaryTimer <= Time()) {
+		::SalaryTimer <- Time() + 360
+		foreach (ply in VUtil.Player.GetAll()) {
+			if (ply.ValidateScriptScope()) {
+				local script = ply.GetScriptScope()
+				if (script.salary > 0) {
+					VUtil.Player.GiveMoney(ply, script.salary, "You have received your salary.")
+				} else {
+					VUtil.Player.GiveMoney(ply, script.salary, "You have received no salary because you are unemployed!")
+				}
+			}
+		}
+	}
+	if (::LockdownEndTime <= Time() && ::LockdownInEffect) {
+		::LockdownInEffect <- false
+		ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+		ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+		ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+	}
+	if (::PurgeEndTime <= Time() && ::PurgeInEffect) {
+		::PurgeInEffect <- false
+		ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+		ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+		ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+	}
+}
+
+::ActiveMayor <- function() {
+	foreach (ply in VUtil.Player.GetAll()) {
+		if (ply.ValidateScriptScope()) {
+			local script = ply.GetScriptScope()
+			if (script.job == "Mayor") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 ::FindPlayerByRPName <- function(name) {
 	foreach (ply in VUtil.Player.GetAll()) {
 		if (ply.ValidateScriptScope()) {
@@ -91,7 +147,51 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 	VUtil.Debug.PrintTable(ply.GetScriptScope())
 }
 
+::OnGameEvent_player_death <- function(ply, attacker) {
+	if (ply.ValidateScriptScope()) {
+		local script = ply.GetScriptScope()
+		if (script.wanted) {
+			ScriptPrintMessageChatAll(script.rpname + " is no longer wanted by the police.")
+			script.wanted <- false
+		}
+		if (script.warrant) {
+			::CenterPrint(ply, "Your search warrant has been revoked.")
+			script.warrant <- false
+		}
+		if (script.job == "Mayor") {
+			if (::LockdownInEffect) {
+				::LockdownInEffect <- false
+				ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+				ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+				ScriptPrintMessageChatAll("THE LOCKDOWN HAS ENDED")
+			}
+			if (::PurgeInEffect) {
+				::PurgeInEffect <- false
+				ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+				ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+				ScriptPrintMessageChatAll("THE PURGE HAS ENDED")
+			}
+		}
+	}
+}
 
+::OnGameEvent_player_footstep <- function(ply) {
+	if (ply.ValidateScriptScope()) {
+		local script = ply.GetScriptScope()
+		if (!("gorp_init" in script)) {
+			script.rpname <- "noname"
+			script.job <- "Citizen"
+			script.money <- 250
+			script.snacks <- 0
+			script.stocks <- 0
+			script.bounty <- 0
+			script.license <- false
+			script.wanted <- false
+			script.warrant <- false
+			script.gorp_init <- true
+		}
+	}
+}
 
 ::OnGameEvent_player_say <- function(ply, txt) {
 	if (ply.ValidateScriptScope()) {
@@ -112,30 +212,107 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 						ScriptPrintMessageChatAll(oldname + " has changed their name to " + newname + ".")
 					}
 				}
+				return
+			}
+			if (txt.len() >= 10 && txt.slice(0, 10) == "/givemoney") {
+				local args = split(txt, " ")
+				if (args[1] == null || args[2] == null) {
+					::CenterPrint(ply, "Invalid target!")
+				} else {
+					if (args[1].len() < 2) {
+						::CenterPrint(ply, "Invalid target!")
+					} else {
+						if (args[2] < 1) {
+							::CenterPrint(ply, "Invalid money amount!")
+						} else {
+							local target = FindPlayerByRPName(args[1])
+							if (target == null) {
+								::CenterPrint(ply, "Invalid target!")
+							} else {
+								if (ply.entindex() == target.entindex()) {
+									::CenterPrint(ply, "You cannot give yourself money!")
+								} else {
+									if (target.ValidateScriptScope()) {
+										local ts = target.GetScriptScope()
+										if (script.money < args[2]) {
+											::CenterPrint(ply, "You do not have enough money!")
+										} else {
+											::CenterPrint(ply, "You have given $" + args[2] + " to " + ts.rpname + ".")
+											::CenterPrint(target, script.rpname + " has given you $" + args[2] + ".")
+											ts.money <- ts.money + args[2]
+											script.money <- script.money - args[2]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				return
 			}
 			if (txt == "/gundealer" && script.job != "Gun Dealer") {
 				local job = "Gun Dealer"
 				script.job <- job
+				script.salary <- 15
 				ScriptPrintMessageChatAll(script.rpname + " has become a " + job + ".")
+				return
 			}
 			if (txt == "/police" && script.job != "Police Officer") {
 				local job = "Police Officer"
 				script.job <- job
+				script.salary <- 25
 				ScriptPrintMessageChatAll(script.rpname + " has become a " + job + ".")
+				return
 			}
 			if (txt == "/citizen" && script.job != "Citizen") {
 				local job = "Citizen"
 				script.job <- job
+				script.salary <- 20
 				ScriptPrintMessageChatAll(script.rpname + " has become a " + job + ".")
+				return
+			}
+			if (txt == "/hobo" && script.job != "Hobo") {
+				local job = "Hobo"
+				script.job <- job
+				script.salary <- 0
+				ScriptPrintMessageChatAll(script.rpname + " has become a " + job + ".")
+				return
+			}
+			if (txt == "/mayor" && script.job != "Mayor" && !::ActiveMayor()) {
+				local job = "Mayor"
+				script.job <- job
+				script.salary <- 45
+				ScriptPrintMessageChatAll(script.rpname + " has become the " + job + ".")
+				return
 			}
 			if (txt == "/requestlicense") {
 				ScriptPrintMessageChatAll(script.rpname + " is requesting a gun license.")
+				return
 			}
 			if (txt == "/money" || txt == "/wallet" || txt == "/cash") {
 				::CenterPrint(ply, "You have $" + script.money + ".")
+				return
 			}
 			if (txt == "/snacks") {
 				::CenterPrint(ply, "You have " + script.snacks + " snacks.")
+				return
+			}
+			if (txt == "/lockdown") {
+				if (script.job != "Mayor") {
+					::CenterPrint(ply, "You are not allowed to initiate a lockdown!")
+				} else {
+					if (script.snacks < 1) {
+						::CenterPrint(ply, "You do not have any snacks!")
+					} else {
+						::CenterPrint(ply, "You have initiated a lockdown.")
+						ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED A LOCKDOWN")
+						ScriptPrintMessageChatAll("ONLY GOVERNMENT OFFICIALS WILL BE ALLOWED ON THE STREET")
+						ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED A LOCKDOWN")
+						::LockdownInEffect <- true
+						::LockdownEndTime <- Time() + 60
+					}
+				}
+				return
 			}
 			if (txt == "/eat" || txt == "/heal") {
 				if (ply.GetHealth() >= 100) {
@@ -153,6 +330,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 						script.snacks = script.snacks - 1
 					}
 				}
+				return
 			}
 			if (txt == "/buysnacks") {
 				if (script.snacks >= 12) {
@@ -166,6 +344,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 						script.snacks = script.snacks + 1
 					}
 				}
+				return
 			}
 			if (txt == "/buyammo") {
 				if (script.money < 40) {
@@ -175,12 +354,13 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 					script.money = script.money - 40
 					VUtil.Player.GiveAmmo(ply)
 				}
+				return
 			}
 			if (txt.len() >= 12 && txt.slice(0, 12) == "/givelicense") {
 				if (script.job != "Police Officer") {
 					::CenterPrint(ply, "You are not allowed to give people gun licenses!")
 				} else {
-					if (txt.len() >= 14 && txt.slice(14).len() > 2) {
+					if (txt.len() >= 14 && txt.slice(14).len() < 2) {
 						::CenterPrint(ply, "Invalid target!")
 					} else {
 						local target = FindPlayerByRPName(txt.slice(14))
@@ -204,12 +384,13 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 						}
 					}
 				}
+				return
 			}
 			if (txt.len() >= 14 && txt.slice(0, 14) == "/revokelicense") {
 				if (script.job != "Police Officer") {
 					::CenterPrint(ply, "You are not allowed to take away people's gun licenses!")
 				} else {
-					if (txt.len() >= 16 && txt.slice(16).len() > 2) {
+					if (txt.len() >= 16 && txt.slice(16).len() < 2) {
 						::CenterPrint(ply, "Invalid target!")
 					} else {
 						local target = FindPlayerByRPName(txt.slice(16))
@@ -233,9 +414,10 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 						}
 					}
 				}
+				return
 			}
 			if (txt.len() >= 11 && txt.slice(0, 11) == "/haslicense") {
-				if (txt.len() >= 13 && txt.slice(13).len() > 2) {
+				if (txt.len() >= 13 && txt.slice(13).len() < 2) {
 					::CenterPrint(ply, "Invalid target!")
 				} else {
 					local target = FindPlayerByRPName(txt.slice(13))
@@ -248,30 +430,72 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 								::CenterPrint(ply, ts.rpname + " can legally bare arms.")
 							} else {
 								::CenterPrint(ply, ts.rpname + " cannot legally bare arms.")
-							}	
+							}
 						}
 					}
 				}
+				return
 			}
-		}
-	}
-}
-
-::OnGameEvent_player_use <- function(ply, ent) {
-}
-
-::OnGameEvent_player_footstep <- function(ply) {
-	if (ply.ValidateScriptScope()) {
-		local script = ply.GetScriptScope()
-		if (!("gorp_init" in script)) {
-			script.rpname <- "noname"
-			script.job <- "Citizen"
-			script.money <- 250
-			script.snacks <- 0
-			script.stocks <- 0
-			script.license <- false
-			script.wanted <- false
-			script.gorp_init <- true
+			if (txt.len() >= 8 && txt.slice(0, 8) == "/warrant") {
+				if (script.job != "Police Officer") {
+					::CenterPrint(ply, "You are not allowed to place a search warrant!")
+				} else {
+					if (txt.len() >= 10 && txt.slice(10).len() < 2) {
+						::CenterPrint(ply, "Invalid target!")
+					} else {
+						local target = FindPlayerByRPName(txt.slice(10))
+						if (target == null) {
+							::CenterPrint(ply, "Invalid target!")
+						} else {
+							if (ply.entindex() == target.entindex()) {
+								::CenterPrint(ply, "You cannot place a search warrant on yourself!")
+							} else {
+								if (target.ValidateScriptScope()) {
+									local ts = target.GetScriptScope()
+									if (ts.warrant) {
+										::CenterPrint(ply, ts.rpname + " already has a search warrant!")
+									} else {
+										::CenterPrint(ply, "You have placed a search warrant on " + ts.rpname + ".")
+										::CenterPrint(target, script.rpname + " has placed a search warrant on you.")
+										ts.warrant <- true
+									}
+								}
+							}
+						}
+					}
+				}
+				return
+			}
+			if (txt.len() >= 10 && txt.slice(0, 10) == "/unwarrant") {
+				if (script.job != "Police Officer") {
+					::CenterPrint(ply, "You are not allowed to revoke a search warrant!")
+				} else {
+					if (txt.len() >= 12 && txt.slice(12).len() < 2) {
+						::CenterPrint(ply, "Invalid target!")
+					} else {
+						local target = FindPlayerByRPName(txt.slice(12))
+						if (target == null) {
+							::CenterPrint(ply, "Invalid target!")
+						} else {
+							if (ply.entindex() == target.entindex()) {
+								::CenterPrint(ply, "You cannot revoke your own search warrant!")
+							} else {
+								if (target.ValidateScriptScope()) {
+									local ts = target.GetScriptScope()
+									if (ts.warrant) {
+										::CenterPrint(ply, "You have placed a search warrant on " + ts.rpname + ".")
+										::CenterPrint(target, script.rpname + " has revoked your search warrant.")
+										ts.warrant <- false
+									} else {
+										::CenterPrint(ply, ts.rpname + " does not have a search warrant!")
+									}
+								}
+							}
+						}
+					}
+				}
+				return
+			}
 		}
 	}
 }
@@ -787,7 +1011,6 @@ events_ids_translate[EVENT_CS_ROUND_START_BEEP]<-["cs_round_start_beep",[]];
 events_ids_translate[EVENT_CS_ROUND_FINAL_BEEP]<-["cs_round_final_beep",[]];
 events_ids_translate[EVENT_ROUND_TIME_WARNING]<-["round_time_warning",[]];
 
-
 if (!("gameevents_proxy" in getroottable())||!(::gameevents_proxy.IsValid())){
 ::gameevents_proxy<-Entities.CreateByClassname("info_game_event_proxy");
 ::gameevents_proxy.__KeyValueFromString("event_name","player_use");
@@ -797,6 +1020,7 @@ if (!("gameevents_proxy" in getroottable())||!(::gameevents_proxy.IsValid())){
 ::GameEventsCapturedPlayer<-null
 
 Think<-function(){
+::GORP_Think()
 player<-null;
 while((player = Entities.FindByClassname(player,"*")) != null){
 if (player.GetClassname()=="player"){
@@ -824,7 +1048,6 @@ return
 ::WEAPONTYPE_MACHINEGUN<-6
 ::WEAPONTYPE_C4<-7
 ::WEAPONTYPE_GRENADE<-8
-
 
 FireEventFormat<-function(id,event_data){
 local name="OnGameEvent_"+events_ids_translate[id][0]
