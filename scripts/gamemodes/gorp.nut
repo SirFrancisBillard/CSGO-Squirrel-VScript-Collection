@@ -22,6 +22,8 @@
 
 //Translated from valve key value with gmod lua function util.KeyValuesToTable
 
+::GORP_DEBUG <- false;
+
 SendToConsole("mp_respawn_on_death_t 1")
 SendToConsole("mp_respawn_on_death_ct 1")
 SendToConsole("mp_ignore_round_win_conditions 1")
@@ -29,6 +31,30 @@ SendToConsole("mp_teammates_are_enemies 1")
 SendToConsole("mp_warmup_end")
 
 IncludeScript("VUtil.nut");
+
+::point_clientcommand <- Entities.CreateByClassname("point_clientcommand");
+
+::SendCommandToClient<-function(player,command){
+DoEntFire("!self","Command",command,0,player,point_clientcommand);
+}
+
+::DrawRadar<-function(player){
+SendCommandToClient(player,"drawradar")
+}
+
+::ShowRadar<-DrawRadar
+
+::HideRadar<-function(player){
+SendCommandToClient(player,"hideradar")
+}
+
+::EmitGameSoundOnClient<-function(player,sound){
+SendCommandToClient(player,"playgamesound "+sound)
+}
+
+::EmitSoundOnClient<-function(player,sound){
+SendCommandToClient(player,"play "+sound)
+}
 
 ::env_hudhint<-Entities.CreateByClassname("env_hudhint")
 
@@ -76,6 +102,14 @@ env_hudhint.__KeyValueFromString("message",text)
 EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 }
 
+::DenySound <- function(ply) {
+	::EmitSoundOnClient(ply, "common/wpn_denyselect.wav")
+}
+
+::GrantSound <- function(ply) {
+	::EmitSoundOnClient(ply, "buttons/blip1.wav")
+}
+
 ::LockdownInEffect <- false
 ::PurgeInEffect <- false
 ::LotteryInEffect <- false
@@ -93,9 +127,10 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 			if (ply.ValidateScriptScope()) {
 				local script = ply.GetScriptScope()
 				if (script.salary > 0) {
-					VUtil.Player.GiveMoney(ply, script.salary, "You have received your salary.")
+					::CenterPrint(ply, "You have received your salary of $" + script.salary + ".")
+					script.money <- script.money + script.salary
 				} else {
-					VUtil.Player.GiveMoney(ply, script.salary, "You have received no salary because you are unemployed!")
+					::CenterPrint(ply, "You have received no salary because you are unemployed!")
 				}
 			}
 		}
@@ -118,9 +153,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 	foreach (ply in VUtil.Player.GetAll()) {
 		if (ply.ValidateScriptScope()) {
 			local script = ply.GetScriptScope()
-			if (script.job == "Mayor") {
-				return true
-			}
+			return script.job == "Mayor"
 		}
 	}
 	return false
@@ -139,12 +172,16 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 }
 
 ::OnGameEvent_bullet_impact <- function(ply, pos) {
-	local plypos=ply.GetOrigin()
-	ply.SetVelocity(ply.GetVelocity()+(plypos-pos))
+	if (::GORP_DEBUG) {
+		local plypos=ply.GetOrigin()
+		ply.SetVelocity(ply.GetVelocity()+(plypos-pos))
+	}
 }
 
 ::OnGameEvent_inspect_weapon <- function(ply) {
-	VUtil.Debug.PrintTable(ply.GetScriptScope())
+	if (::GORP_DEBUG) {
+		VUtil.Debug.PrintTable(ply.GetScriptScope())
+	}
 }
 
 ::OnGameEvent_player_death <- function(ply, attacker) {
@@ -177,6 +214,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 
 ::OnGameEvent_player_footstep <- function(ply) {
 	if (ply.ValidateScriptScope()) {
+		ply.SetTeam(2)
 		local script = ply.GetScriptScope()
 		if (!("gorp_init" in script)) {
 			script.rpname <- "noname"
@@ -198,6 +236,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 
 ::BuyableWeapons.push({classname = "weapon_ak47", price = 180})
 ::BuyableWeapons.push({classname = "weapon_awp", price = 360})
+::BuyableWeapons.push({classname = "weapon_negev", price = 400})
 ::BuyableWeapons.push({classname = "weapon_deagle", price = 80})
 
 ::OnGameEvent_player_say <- function(ply, txt) {
@@ -229,7 +268,8 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 					if (args[1].len() < 2) {
 						::CenterPrint(ply, "Invalid target!")
 					} else {
-						if (args[2] < 1) {
+						local amt <- args[2].tointeger()
+						if (amt < 1) {
 							::CenterPrint(ply, "Invalid money amount!")
 						} else {
 							local target = FindPlayerByRPName(args[1])
@@ -241,13 +281,13 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 								} else {
 									if (target.ValidateScriptScope()) {
 										local ts = target.GetScriptScope()
-										if (script.money < args[2]) {
+										if (script.money < amt) {
 											::CenterPrint(ply, "You do not have enough money!")
 										} else {
-											::CenterPrint(ply, "You have given $" + args[2] + " to " + ts.rpname + ".")
-											::CenterPrint(target, script.rpname + " has given you $" + args[2] + ".")
-											ts.money <- ts.money + args[2]
-											script.money <- script.money - args[2]
+											::CenterPrint(ply, "You have given $" + amt + " to " + ts.rpname + ".")
+											::CenterPrint(target, script.rpname + " has given you $" + amt + ".")
+											ts.money <- ts.money + amt
+											script.money <- script.money - amt
 										}
 									}
 								}
@@ -294,7 +334,7 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 				local job = "Mayor"
 				script.job <- job
 				script.salary <- 45
-				ScriptPrintMessageChatAll(script.rpname + " has become the " + job + ".")
+				ScriptPrintMessageChatAll(script.rpname + " has become the town's " + job + ".")
 				return
 			}
 			if (txt == "/requestlicense") {
@@ -325,7 +365,6 @@ EntFireByHandle(env_hudhint,"ShowHudHint","",0.0,null,null)
 							ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED A LOCKDOWN")
 							ScriptPrintMessageChatAll("ONLY GOVERNMENT OFFICIALS WILL BE ALLOWED ON THE STREET")
 							ScriptPrintMessageChatAll("EVERYONE MUST STAY INSIDE THEIR HOMES")
-							ScriptPrintMessageChatAll("THE MAYOR OF THE CITY HAS INITIATED A LOCKDOWN")
 							::LockdownInEffect <- true
 							::LockdownEndTime <- Time() + 60
 						}
